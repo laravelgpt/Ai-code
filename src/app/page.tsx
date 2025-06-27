@@ -14,7 +14,7 @@ import {
   Search,
   Bot,
   Settings,
-  PanelRight,
+  PanelBottom,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -50,7 +50,7 @@ export default function WorkbenchPage() {
   const [loading, setLoading] = React.useState<LoadingState>(false);
   const [activeTab, setActiveTab] = React.useState('ai');
   const [theme, setTheme] = React.useState('light');
-  const [isRightPanelOpen, setIsRightPanelOpen] = React.useState(true);
+  const [isBottomPanelOpen, setIsBottomPanelOpen] = React.useState(true);
   const [terminalInput, setTerminalInput] = React.useState('');
   const editorRef = React.useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
   const { toast } = useToast();
@@ -148,7 +148,7 @@ export default function WorkbenchPage() {
       console.log = originalConsoleLog;
     }
     setActiveTab('output');
-    if (!isRightPanelOpen) setIsRightPanelOpen(true);
+    if (!isBottomPanelOpen) setIsBottomPanelOpen(true);
   };
   
   const handleCommandRun = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -205,7 +205,7 @@ export default function WorkbenchPage() {
     setLoading('explain');
     setAiExplanation('');
     setActiveTab('ai');
-    if (!isRightPanelOpen) setIsRightPanelOpen(true);
+    if (!isBottomPanelOpen) setIsBottomPanelOpen(true);
     try {
       const result = await explainCode({ code: selectedCode, language });
       setAiExplanation(result.explanation);
@@ -226,7 +226,7 @@ export default function WorkbenchPage() {
     setLoading('fix');
     setAiExplanation('');
     setActiveTab('ai');
-    if (!isRightPanelOpen) setIsRightPanelOpen(true);
+    if (!isBottomPanelOpen) setIsBottomPanelOpen(true);
     try {
       const result = await fixErrors({ code: selectedCode, language });
       const selection = editorRef.current?.getSelection();
@@ -349,14 +349,14 @@ export default function WorkbenchPage() {
                 <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                 <span className="sr-only">Toggle theme</span>
               </Button>
-               <Button variant="ghost" size="icon" onClick={() => setIsRightPanelOpen(v => !v)}>
-                  <PanelRight className="h-5 w-5" />
-                  <span className="sr-only">Toggle Right Panel</span>
+               <Button variant="ghost" size="icon" onClick={() => setIsBottomPanelOpen(v => !v)}>
+                  <PanelBottom className="h-5 w-5" />
+                  <span className="sr-only">Toggle Bottom Panel</span>
               </Button>
             </div>
           </header>
 
-          <main className="flex-1 flex overflow-hidden">
+          <main className="flex-1 flex flex-col overflow-hidden">
             <div className="flex-1 relative">
               <CodeEditor
                 language={language}
@@ -366,9 +366,9 @@ export default function WorkbenchPage() {
                 theme={theme === 'dark' ? 'vs-dark' : 'light'}
               />
             </div>
-            {isRightPanelOpen && (
+            {isBottomPanelOpen && (
               <RightPanel
-                togglePanel={() => setIsRightPanelOpen(false)}
+                togglePanel={() => setIsBottomPanelOpen(false)}
                 output={output}
                 aiExplanation={aiExplanation}
                 loading={loading}

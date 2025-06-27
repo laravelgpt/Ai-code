@@ -3,7 +3,7 @@
 import * as React from 'react';
 import {
   LoaderCircle,
-  PanelRightClose,
+  PanelBottomClose,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -34,7 +34,7 @@ export default function RightPanel({
   togglePanel,
 }: RightPanelProps) {
   return (
-    <div className="w-[450px] h-full border-l bg-background">
+    <div className="h-[300px] w-full border-t bg-background">
       <Card className="h-full flex flex-col rounded-none border-0">
         <Tabs
           value={activeTab}
@@ -51,7 +51,7 @@ export default function RightPanel({
               size="icon"
               onClick={togglePanel}
             >
-              <PanelRightClose className="h-5 w-5" />
+              <PanelBottomClose className="h-5 w-5" />
               <span className="sr-only">Close Panel</span>
             </Button>
           </div>
