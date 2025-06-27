@@ -10,8 +10,11 @@ import {
   Moon,
   Sun,
   LoaderCircle,
-  ChevronDown,
-  ChevronUp,
+  Files,
+  Search,
+  Bot,
+  Settings,
+  PanelRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,15 +24,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { explainCode } from '@/ai/flows/explain-code';
 import { fixErrors } from '@/ai/flows/fix-errors';
 import { autoComplete } from '@/ai/flows/auto-complete';
 import { defaultJSCode, defaultPythonCode, defaultTSCode, defaultHTMLCode, defaultCSSCode } from '@/lib/default-code';
 import CodeEditor from '@/components/code-editor';
+import RightPanel from '@/components/right-panel';
+import {
+  Sidebar,
+  SidebarProvider,
+  SidebarTrigger,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+} from '@/components/ui/sidebar';
 
 type LoadingState = 'explain' | 'fix' | 'autocomplete' | false;
 
@@ -39,9 +48,9 @@ export default function WorkbenchPage() {
   const [output, setOutput] = React.useState<string[]>([]);
   const [aiExplanation, setAiExplanation] = React.useState('');
   const [loading, setLoading] = React.useState<LoadingState>(false);
-  const [activeTab, setActiveTab] = React.useState('output');
+  const [activeTab, setActiveTab] = React.useState('ai');
   const [theme, setTheme] = React.useState('light');
-  const [isPanelOpen, setIsPanelOpen] = React.useState(true);
+  const [isRightPanelOpen, setIsRightPanelOpen] = React.useState(true);
   const [terminalInput, setTerminalInput] = React.useState('');
   const editorRef = React.useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
   const { toast } = useToast();
@@ -139,7 +148,7 @@ export default function WorkbenchPage() {
       console.log = originalConsoleLog;
     }
     setActiveTab('output');
-    if (!isPanelOpen) setIsPanelOpen(true);
+    if (!isRightPanelOpen) setIsRightPanelOpen(true);
   };
   
   const handleCommandRun = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -196,7 +205,7 @@ export default function WorkbenchPage() {
     setLoading('explain');
     setAiExplanation('');
     setActiveTab('ai');
-    if (!isPanelOpen) setIsPanelOpen(true);
+    if (!isRightPanelOpen) setIsRightPanelOpen(true);
     try {
       const result = await explainCode({ code: selectedCode, language });
       setAiExplanation(result.explanation);
@@ -217,7 +226,7 @@ export default function WorkbenchPage() {
     setLoading('fix');
     setAiExplanation('');
     setActiveTab('ai');
-    if (!isPanelOpen) setIsPanelOpen(true);
+    if (!isRightPanelOpen) setIsRightPanelOpen(true);
     try {
       const result = await fixErrors({ code: selectedCode, language });
       const selection = editorRef.current?.getSelection();
@@ -269,132 +278,110 @@ export default function WorkbenchPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background font-body">
-      <header className="flex items-center justify-between h-16 px-4 border-b shrink-0">
-        <div className="flex items-center gap-4">
-          <FileCode className="h-7 w-7 text-primary" />
-          <h1 className="text-xl font-bold font-headline text-foreground">AI Code Workbench</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <Select onValueChange={handleLanguageChange} defaultValue={language}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Select Language" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="javascript">JavaScript</SelectItem>
-              <SelectItem value="typescript">TypeScript</SelectItem>
-              <SelectItem value="python">Python</SelectItem>
-              <SelectItem value="html">HTML</SelectItem>
-              <SelectItem value="css">CSS</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="sm" onClick={handleRunCode}><Play className="mr-2 h-4 w-4" />Run</Button>
-          <Button variant="outline" size="sm" onClick={handleExplainCode} disabled={!!loading}>
-            {loading === 'explain' ? <LoaderCircle className="animate-spin mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
-            Explain
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleFixCode} disabled={!!loading}>
-            {loading === 'fix' ? <LoaderCircle className="animate-spin mr-2 h-4 w-4" /> : <Wand className="mr-2 h-4 w-4" />}
-            Fix
-          </Button>
-           <Button variant="outline" size="sm" onClick={handleAutoComplete} disabled={!!loading}>
-            {loading === 'autocomplete' ? <LoaderCircle className="animate-spin mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
-            Complete
-          </Button>
-          <Button variant="ghost" size="icon" onClick={toggleTheme}>
-            <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">Toggle theme</span>
-          </Button>
-        </div>
-      </header>
+    <SidebarProvider>
+      <div className="flex h-screen bg-background font-body">
+        <Sidebar collapsible="icon" className="p-2 border-r">
+          <SidebarMenu className="h-full flex flex-col">
+            <div className="flex-1">
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Files" isActive>
+                  <Files />
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Search">
+                  <Search />
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="AI Agent Builder">
+                  <Bot />
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </div>
+            <div>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Settings">
+                  <Settings />
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </div>
+          </SidebarMenu>
+        </Sidebar>
 
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 relative">
-          <CodeEditor
-            language={language}
-            value={code}
-            onChange={(value) => setCode(value || '')}
-            onMount={handleEditorDidMount}
-            theme={theme === 'dark' ? 'vs-dark' : 'light'}
-          />
-        </div>
-        <div
-          className="transition-all duration-300 ease-in-out"
-          style={{ height: isPanelOpen ? '288px' : '48px' }}
-        >
-          <Card className="h-full flex flex-col rounded-t-lg border-t">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
-              <div className="flex items-center justify-between p-2 border-b bg-muted/50 rounded-t-lg">
-                <TabsList className="bg-transparent p-0">
-                  <TabsTrigger value="output">Terminal</TabsTrigger>
-                  <TabsTrigger value="ai">AI Assistant</TabsTrigger>
-                </TabsList>
-                <Button variant="ghost" size="icon" onClick={() => setIsPanelOpen(!isPanelOpen)}>
-                  {isPanelOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-                  <span className="sr-only">Toggle Panel</span>
-                </Button>
+        <div className="flex flex-1 flex-col overflow-hidden">
+           <header className="flex items-center justify-between h-16 px-4 border-b shrink-0">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger className="md:hidden" />
+              <div className="items-center gap-2 hidden md:flex">
+                <FileCode className="h-7 w-7 text-primary" />
+                <h1 className="text-xl font-bold font-headline text-foreground">AI Code Workbench</h1>
               </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Select onValueChange={handleLanguageChange} defaultValue={language}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Select Language" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="javascript">JavaScript</SelectItem>
+                  <SelectItem value="typescript">TypeScript</SelectItem>
+                  <SelectItem value="python">Python</SelectItem>
+                  <SelectItem value="html">HTML</SelectItem>
+                  <SelectItem value="css">CSS</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="outline" size="sm" onClick={handleRunCode}><Play className="mr-2 h-4 w-4" />Run</Button>
+              <Button variant="outline" size="sm" onClick={handleExplainCode} disabled={!!loading}>
+                {loading === 'explain' ? <LoaderCircle className="animate-spin mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                Explain
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleFixCode} disabled={!!loading}>
+                {loading === 'fix' ? <LoaderCircle className="animate-spin mr-2 h-4 w-4" /> : <Wand className="mr-2 h-4 w-4" />}
+                Fix
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleAutoComplete} disabled={!!loading}>
+                {loading === 'autocomplete' ? <LoaderCircle className="animate-spin mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                Complete
+              </Button>
+              <Button variant="ghost" size="icon" onClick={toggleTheme}>
+                <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                <span className="sr-only">Toggle theme</span>
+              </Button>
+               <Button variant="ghost" size="icon" onClick={() => setIsRightPanelOpen(v => !v)}>
+                  <PanelRight className="h-5 w-5" />
+                  <span className="sr-only">Toggle Right Panel</span>
+              </Button>
+            </div>
+          </header>
 
-              {isPanelOpen && (
-                <div className="flex-1 overflow-auto">
-                  <TabsContent value="output" className="p-2 pt-0 h-full mt-0">
-                    <div className="h-full bg-terminal text-terminal-foreground rounded-md flex flex-col">
-                      <ScrollArea className="flex-1">
-                        <div className="text-sm p-4 font-code">
-                          {output.length === 0 && (
-                            <div className="flex items-center">
-                              <span className="text-muted-foreground mr-2">&gt;</span>
-                              <span>Terminal ready. Click "Run" to execute code.</span>
-                            </div>
-                          )}
-                          {output.map((line, index) => {
-                            const isCommand = line.startsWith('> ');
-                            const content = isCommand ? line.substring(2) : line;
-                            return (
-                              <div key={index} className="flex items-start">
-                                <span className="text-muted-foreground mr-2 shrink-0 select-none">
-                                  {isCommand ? '>' : ' '}
-                                </span>
-                                <span className="whitespace-pre-wrap break-all">{content}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </ScrollArea>
-                      <div className="flex items-center p-1 border-t border-t-slate-700">
-                        <span className="text-muted-foreground mr-2 pl-2 select-none">&gt;</span>
-                        <input
-                          value={terminalInput}
-                          onChange={(e) => setTerminalInput(e.target.value)}
-                          onKeyDown={handleCommandRun}
-                          placeholder="Type a JavaScript command and press Enter..."
-                          className="w-full bg-transparent border-0 ring-0 focus:ring-0 focus:outline-none p-1 font-code text-sm placeholder:text-muted-foreground/50"
-                          autoComplete="off"
-                        />
-                      </div>
-                    </div>
-                  </TabsContent>
-                  <TabsContent value="ai" className="h-full mt-0">
-                    <ScrollArea className="h-full">
-                      <div className="p-4 text-sm prose dark:prose-invert max-w-none">
-                        {loading && loading !== 'autocomplete' ? (
-                          <div className="flex items-center gap-2">
-                            <LoaderCircle className="animate-spin h-4 w-4" />
-                            <span>Thinking...</span>
-                          </div>
-                        ) : (
-                          <div dangerouslySetInnerHTML={{ __html: aiExplanation.replace(/\n/g, '<br />') }} />
-                        )}
-                      </div>
-                    </ScrollArea>
-                  </TabsContent>
-                </div>
-              )}
-            </Tabs>
-          </Card>
+          <main className="flex-1 flex overflow-hidden">
+            <div className="flex-1 relative">
+              <CodeEditor
+                language={language}
+                value={code}
+                onChange={(value) => setCode(value || '')}
+                onMount={handleEditorDidMount}
+                theme={theme === 'dark' ? 'vs-dark' : 'light'}
+              />
+            </div>
+            {isRightPanelOpen && (
+              <RightPanel
+                togglePanel={() => setIsRightPanelOpen(false)}
+                output={output}
+                aiExplanation={aiExplanation}
+                loading={loading}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                terminalInput={terminalInput}
+                setTerminalInput={setTerminalInput}
+                handleCommandRun={handleCommandRun}
+              />
+            )}
+          </main>
         </div>
-      </main>
-    </div>
+      </div>
+    </SidebarProvider>
   );
 }
