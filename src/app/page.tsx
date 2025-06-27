@@ -46,7 +46,9 @@ export default function WorkbenchPage() {
   const [code, setCode] = React.useState(defaultJSCode);
   const [language, setLanguage] = React.useState('javascript');
   const [output, setOutput] = React.useState<string[]>([]);
-  const [aiExplanation, setAiExplanation] = React.useState('');
+  const [aiExplanation, setAiExplanation] = React.useState(
+    `**Copy that prompt** into ChatGPT / Replit / Copilot, or hand it to your dev team, and you’ll get a cloud-hosted VS Code-style environment **with Extension Marketplace + AI Agent that can create, refactor, fix, and reorganize any codebase across all languages and frameworks**—just like Cursor, but fully under your control. 🚀`
+  );
   const [loading, setLoading] = React.useState<LoadingState>(false);
   const [activeTab, setActiveTab] = React.useState('ai');
   const [theme, setTheme] = React.useState('light');

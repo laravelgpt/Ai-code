@@ -109,7 +109,9 @@ export default function RightPanel({
                   ) : (
                     <div
                       dangerouslySetInnerHTML={{
-                        __html: aiExplanation.replace(/\n/g, '<br />'),
+                        __html: aiExplanation
+                          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                          .replace(/\n/g, '<br />'),
                       }}
                     />
                   )}
