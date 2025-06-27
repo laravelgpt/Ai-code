@@ -62,31 +62,12 @@ export default function WorkbenchPage() {
   const [output, setOutput] = React.useState<string[]>([]);
   const [chatMessages, setChatMessages] = React.useState<ChatMessage[]>([]);
   const [loading, setLoading] = React.useState<LoadingState>(false);
-  const [theme, setTheme] = React.useState('light');
   const [isBottomPanelOpen, setIsBottomPanelOpen] = React.useState(true);
   const [isRightPanelOpen, setIsRightPanelOpen] = React.useState(true);
   const [terminalInput, setTerminalInput] = React.useState('');
   const editorRef = React.useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
-
-  React.useEffect(() => {
-    const storedTheme = localStorage.getItem('theme') || 'light';
-    setTheme(storedTheme);
-  }, []);
-
-  React.useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
-  };
   
   const handleLanguageChange = (value: string) => {
     setLanguage(value);
@@ -409,11 +390,6 @@ export default function WorkbenchPage() {
                 {loading === 'autocomplete' ? <LoaderCircle className="animate-spin h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
                 <span className="hidden md:inline">Complete</span>
               </Button>
-              <Button variant="ghost" size="icon" onClick={toggleTheme}>
-                <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                <span className="sr-only">Toggle theme</span>
-              </Button>
                <Button variant="ghost" size="icon" onClick={() => setIsBottomPanelOpen(v => !v)}>
                   <PanelBottom className="h-5 w-5" />
                   <span className="sr-only">Toggle Bottom Panel</span>
@@ -433,7 +409,7 @@ export default function WorkbenchPage() {
                   value={code}
                   onChange={(value) => setCode(value || '')}
                   onMount={handleEditorDidMount}
-                  theme={theme === 'dark' ? 'vs-dark' : 'light'}
+                  theme={'vs-dark'}
                 />
               </div>
               {!isMobile && isBottomPanelOpen && (
