@@ -324,67 +324,74 @@ export default function WorkbenchPage() {
           style={{ height: isPanelOpen ? '288px' : '48px' }}
         >
           <Card className="h-full flex flex-col rounded-t-lg border-t">
-            <div className="flex items-center justify-between p-2 border-b bg-muted/50 rounded-t-lg">
-                <h3 className="font-semibold text-sm pl-2">Panel</h3>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
+              <div className="flex items-center justify-between p-2 border-b bg-muted/50 rounded-t-lg">
+                <TabsList className="bg-transparent p-0">
+                  <TabsTrigger value="output">Terminal</TabsTrigger>
+                  <TabsTrigger value="ai">AI Assistant</TabsTrigger>
+                </TabsList>
                 <Button variant="ghost" size="icon" onClick={() => setIsPanelOpen(!isPanelOpen)}>
-                    {isPanelOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-                    <span className="sr-only">Toggle Panel</span>
+                  {isPanelOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                  <span className="sr-only">Toggle Panel</span>
                 </Button>
-            </div>
-            {isPanelOpen && (
-              <CardContent className="flex-1 p-0">
-                  <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
-                    <TabsList className="mx-2 mt-2 shrink-0">
-                      <TabsTrigger value="output">Terminal</TabsTrigger>
-                      <TabsTrigger value="ai">AI Assistant</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="output" className="flex-1 overflow-hidden p-2 pt-0">
-                      <div className="h-full bg-terminal text-terminal-foreground rounded-md flex flex-col">
-                        <ScrollArea className="flex-1">
-                          <div className="text-sm p-4 font-code">
-                            {output.length === 0 && (
-                              <div className="flex items-center">
-                                <span className="text-muted-foreground mr-2">&gt;</span>
-                                <span>Terminal ready. Click "Run" to execute code.</span>
+              </div>
+
+              {isPanelOpen && (
+                <div className="flex-1 overflow-auto">
+                  <TabsContent value="output" className="p-2 pt-0 h-full mt-0">
+                    <div className="h-full bg-terminal text-terminal-foreground rounded-md flex flex-col">
+                      <ScrollArea className="flex-1">
+                        <div className="text-sm p-4 font-code">
+                          {output.length === 0 && (
+                            <div className="flex items-center">
+                              <span className="text-muted-foreground mr-2">&gt;</span>
+                              <span>Terminal ready. Click "Run" to execute code.</span>
+                            </div>
+                          )}
+                          {output.map((line, index) => {
+                            const isCommand = line.startsWith('> ');
+                            const content = isCommand ? line.substring(2) : line;
+                            return (
+                              <div key={index} className="flex items-start">
+                                <span className="text-muted-foreground mr-2 shrink-0 select-none">
+                                  {isCommand ? '>' : ' '}
+                                </span>
+                                <span className="whitespace-pre-wrap break-all">{content}</span>
                               </div>
-                            )}
-                            {output.map((line, index) => {
-                                const isCommand = line.startsWith('> ');
-                                const content = isCommand ? line.substring(2) : line;
-                                return (
-                                <div key={index} className="flex items-start">
-                                    <span className="text-muted-foreground mr-2 shrink-0 select-none">
-                                    {isCommand ? '>' : ' '}
-                                    </span>
-                                    <span className="whitespace-pre-wrap break-all">{content}</span>
-                                </div>
-                                );
-                            })}
-                          </div>
-                        </ScrollArea>
-                        <div className="flex items-center p-1 border-t border-t-slate-700">
-                            <span className="text-muted-foreground mr-2 pl-2 select-none">&gt;</span>
-                            <input
-                            value={terminalInput}
-                            onChange={(e) => setTerminalInput(e.target.value)}
-                            onKeyDown={handleCommandRun}
-                            placeholder="Type a JavaScript command and press Enter..."
-                            className="w-full bg-transparent border-0 ring-0 focus:ring-0 focus:outline-none p-1 font-code text-sm placeholder:text-muted-foreground/50"
-                            autoComplete="off"
-                            />
+                            );
+                          })}
                         </div>
+                      </ScrollArea>
+                      <div className="flex items-center p-1 border-t border-t-slate-700">
+                        <span className="text-muted-foreground mr-2 pl-2 select-none">&gt;</span>
+                        <input
+                          value={terminalInput}
+                          onChange={(e) => setTerminalInput(e.target.value)}
+                          onKeyDown={handleCommandRun}
+                          placeholder="Type a JavaScript command and press Enter..."
+                          className="w-full bg-transparent border-0 ring-0 focus:ring-0 focus:outline-none p-1 font-code text-sm placeholder:text-muted-foreground/50"
+                          autoComplete="off"
+                        />
                       </div>
-                    </TabsContent>
-                    <TabsContent value="ai" className="flex-1 overflow-auto p-0">
-                        <ScrollArea className="h-full">
-                        <div className="p-4 text-sm prose dark:prose-invert max-w-none">
-                          {loading && loading !== 'autocomplete' ? <div className="flex items-center gap-2"><LoaderCircle className="animate-spin h-4 w-4" /><span>Thinking...</span></div> : <div dangerouslySetInnerHTML={{ __html: aiExplanation.replace(/\n/g, '<br />') }} />}
-                        </div>
-                        </ScrollArea>
-                    </TabsContent>
-                  </Tabs>
-              </CardContent>
-            )}
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="ai" className="h-full mt-0">
+                    <ScrollArea className="h-full">
+                      <div className="p-4 text-sm prose dark:prose-invert max-w-none">
+                        {loading && loading !== 'autocomplete' ? (
+                          <div className="flex items-center gap-2">
+                            <LoaderCircle className="animate-spin h-4 w-4" />
+                            <span>Thinking...</span>
+                          </div>
+                        ) : (
+                          <div dangerouslySetInnerHTML={{ __html: aiExplanation.replace(/\n/g, '<br />') }} />
+                        )}
+                      </div>
+                    </ScrollArea>
+                  </TabsContent>
+                </div>
+              )}
+            </Tabs>
           </Card>
         </div>
       </main>
