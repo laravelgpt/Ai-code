@@ -16,8 +16,16 @@ import {
   Settings,
   PanelBottom,
   PanelRight,
+  Workflow,
+  ClipboardCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
@@ -29,6 +37,7 @@ import { useToast } from '@/hooks/use-toast';
 import { explainCode } from '@/ai/flows/explain-code';
 import { fixErrors } from '@/ai/flows/fix-errors';
 import { autoComplete } from '@/ai/flows/auto-complete';
+import { runWorkflow } from '@/ai/flows/run-workflow';
 import { chat, type ChatMessage } from '@/ai/flows/chat';
 import { defaultJSCode, defaultPythonCode, defaultTSCode, defaultHTMLCode, defaultCSSCode } from '@/lib/default-code';
 import CodeEditor from '@/components/code-editor';
@@ -43,7 +52,7 @@ import {
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
 
-type LoadingState = 'explain' | 'fix' | 'autocomplete' | 'chat' | false;
+type LoadingState = 'explain' | 'fix' | 'autocomplete' | 'chat' | 'workflow' | false;
 
 export default function WorkbenchPage() {
   const [code, setCode] = React.useState(defaultJSCode);
@@ -280,6 +289,24 @@ export default function WorkbenchPage() {
     }
   };
 
+  const handleRunWorkflow = async (workflowName: string) => {
+    const currentCode = editorRef.current?.getValue();
+    if (!currentCode) {
+      toast({ title: 'Error', description: 'No code in editor to run workflow on.', variant: 'destructive' });
+      return;
+    }
+    setLoading('workflow');
+    try {
+      const result = await runWorkflow({ code: currentCode, language, workflow: workflowName });
+      setCode(result.modifiedCode);
+      toast({ title: 'Success', description: `Workflow "${workflowName}" completed.` });
+    } catch (error) {
+      toast({ title: 'AI Error', description: 'Failed to run workflow.', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSendMessage = async (message: string) => {
     setLoading('chat');
     const newHistory: ChatMessage[] = [...chatMessages, {role: 'user', content: message}];
@@ -358,6 +385,20 @@ export default function WorkbenchPage() {
                 {loading === 'fix' ? <LoaderCircle className="animate-spin mr-2 h-4 w-4" /> : <Wand className="mr-2 h-4 w-4" />}
                 Fix
               </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" disabled={!!loading}>
+                    {loading === 'workflow' ? <LoaderCircle className="animate-spin mr-2 h-4 w-4" /> : <Workflow className="mr-2 h-4 w-4" />}
+                    Workflow
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onSelect={() => handleRunWorkflow('Add JSDoc Comments')}>
+                    <ClipboardCheck className="mr-2 h-4 w-4" />
+                    <span>Add JSDoc Comments</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button variant="outline" size="sm" onClick={handleAutoComplete} disabled={!!loading}>
                 {loading === 'autocomplete' ? <LoaderCircle className="animate-spin mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
                 Complete
