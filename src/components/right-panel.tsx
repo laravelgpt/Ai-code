@@ -7,6 +7,13 @@ import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import type { ChatMessage } from '@/ai/flows/chat';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface RightPanelProps {
   messages: ChatMessage[];
@@ -21,7 +28,7 @@ export default function RightPanel({
   loading,
   onSendMessage,
   togglePanel,
-  className
+  className,
 }: RightPanelProps) {
   const [input, setInput] = React.useState('');
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
@@ -47,17 +54,23 @@ export default function RightPanel({
       handleSend();
     }
   };
-  
+
   const welcomeMessage = `I am your **Agent Builder**. I can help you create, refactor, and improve your code. Ask me to explain or fix code, or give me a prompt to generate something new.`;
 
   return (
     <div className={className}>
       <Card className="h-full flex flex-col rounded-none border-0 border-l">
         <div className="flex items-center justify-between p-2 border-b">
-          <h2 className="text-lg font-semibold flex items-center gap-2 pl-2">
-            <Bot className="h-5 w-5" />
-            Agent Builder
-          </h2>
+          <Select defaultValue="agent-builder">
+            <SelectTrigger className="w-auto border-0 text-lg font-semibold focus:ring-0 shadow-none gap-2 h-auto p-2 justify-start">
+              <Bot className="h-5 w-5 text-primary" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="agent-builder">Agent Builder</SelectItem>
+              <SelectItem value="ai-tools">AI Tools</SelectItem>
+            </SelectContent>
+          </Select>
           <Button variant="ghost" size="icon" onClick={togglePanel}>
             <X className="h-5 w-5" />
             <span className="sr-only">Close Panel</span>
@@ -66,7 +79,8 @@ export default function RightPanel({
         <ScrollArea className="flex-1">
           <div className="p-4 space-y-4 text-sm">
             {messages.length === 0 && !loading ? (
-              <div className="prose dark:prose-invert max-w-none"
+              <div
+                className="prose dark:prose-invert max-w-none"
                 dangerouslySetInnerHTML={{
                   __html: welcomeMessage
                     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -75,19 +89,38 @@ export default function RightPanel({
               />
             ) : (
               messages.map((message, index) => (
-                <div key={index} className={`flex items-start gap-3 ${message.role === 'user' ? 'justify-end' : ''}`}>
-                  {message.role === 'model' && <Bot className="h-5 w-5 text-primary flex-shrink-0" />}
-                  <div className={`rounded-lg px-3 py-2 ${message.role === 'model' ? 'bg-muted' : 'bg-primary text-primary-foreground'}`}>
-                    <div className="prose dark:prose-invert max-w-none"
+                <div
+                  key={index}
+                  className={`flex items-start gap-3 ${
+                    message.role === 'user' ? 'justify-end' : ''
+                  }`}
+                >
+                  {message.role === 'model' && (
+                    <Bot className="h-5 w-5 text-primary flex-shrink-0" />
+                  )}
+                  <div
+                    className={`rounded-lg px-3 py-2 ${
+                      message.role === 'model'
+                        ? 'bg-muted'
+                        : 'bg-primary text-primary-foreground'
+                    }`}
+                  >
+                    <div
+                      className="prose dark:prose-invert max-w-none"
                       dangerouslySetInnerHTML={{
                         __html: message.content
-                          .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>')
+                          .replace(
+                            /```(\w*)\n([\s\S]*?)```/g,
+                            '<pre><code class="language-$1">$2</code></pre>'
+                          )
                           .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                           .replace(/\n/g, '<br />'),
                       }}
                     />
                   </div>
-                  {message.role === 'user' && <User className="h-5 w-5 text-muted-foreground flex-shrink-0" />}
+                  {message.role === 'user' && (
+                    <User className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                  )}
                 </div>
               ))
             )}
