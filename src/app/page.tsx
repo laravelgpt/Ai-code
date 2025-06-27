@@ -42,6 +42,7 @@ export default function WorkbenchPage() {
   const [activeTab, setActiveTab] = React.useState('output');
   const [theme, setTheme] = React.useState('light');
   const [isPanelOpen, setIsPanelOpen] = React.useState(true);
+  const [terminalInput, setTerminalInput] = React.useState('');
   const editorRef = React.useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
   const { toast } = useToast();
 
@@ -140,6 +141,51 @@ export default function WorkbenchPage() {
     setActiveTab('output');
     if (!isPanelOpen) setIsPanelOpen(true);
   };
+  
+  const handleCommandRun = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Enter' || !terminalInput.trim()) return;
+
+    e.preventDefault();
+    const command = terminalInput.trim();
+    setTerminalInput('');
+
+    const newEntries: string[] = [];
+
+    const capturedLogs: string[] = [];
+    const originalConsoleLog = console.log;
+    console.log = (...args) => {
+      capturedLogs.push(
+        args.map(arg => {
+          try {
+            return JSON.stringify(arg, null, 2);
+          } catch {
+            return String(arg);
+          }
+        }).join(' ')
+      );
+    };
+
+    try {
+      const result = eval(command);
+      
+      newEntries.push(...capturedLogs);
+
+      if (result !== undefined) {
+        try {
+          newEntries.push(JSON.stringify(result, null, 2));
+        } catch {
+          newEntries.push(String(result));
+        }
+      }
+    } catch (error: any) {
+      newEntries.push(`Error: ${error.message}`);
+    } finally {
+      console.log = originalConsoleLog;
+    }
+    
+    setOutput(prev => [...prev, `> ${command}`, ...newEntries].filter(l => l));
+  };
+
 
   const handleExplainCode = async () => {
     const selectedCode = getSelectedText();
@@ -292,24 +338,41 @@ export default function WorkbenchPage() {
                       <TabsTrigger value="output">Terminal</TabsTrigger>
                       <TabsTrigger value="ai">AI Assistant</TabsTrigger>
                     </TabsList>
-                    <TabsContent value="output" className="flex-1 overflow-auto p-2 pt-0">
-                      <div className="h-full bg-terminal text-terminal-foreground rounded-md">
-                        <ScrollArea className="h-full">
-                          <pre className="text-sm p-4 font-code whitespace-pre-wrap">
+                    <TabsContent value="output" className="flex-1 overflow-hidden p-2 pt-0">
+                      <div className="h-full bg-terminal text-terminal-foreground rounded-md flex flex-col">
+                        <ScrollArea className="flex-1">
+                          <div className="text-sm p-4 font-code">
                             {output.length === 0 && (
                               <div className="flex items-center">
                                 <span className="text-muted-foreground mr-2">&gt;</span>
                                 <span>Terminal ready. Click "Run" to execute code.</span>
                               </div>
                             )}
-                            {output.map((line, index) => (
-                              <div key={index} className="flex items-start">
-                                <span className="text-muted-foreground mr-2 shrink-0">&gt;</span>
-                                <span className="break-all">{line}</span>
-                              </div>
-                            ))}
-                          </pre>
+                            {output.map((line, index) => {
+                                const isCommand = line.startsWith('> ');
+                                const content = isCommand ? line.substring(2) : line;
+                                return (
+                                <div key={index} className="flex items-start">
+                                    <span className="text-muted-foreground mr-2 shrink-0 select-none">
+                                    {isCommand ? '>' : ' '}
+                                    </span>
+                                    <span className="whitespace-pre-wrap break-all">{content}</span>
+                                </div>
+                                );
+                            })}
+                          </div>
                         </ScrollArea>
+                        <div className="flex items-center p-1 border-t border-t-slate-700">
+                            <span className="text-muted-foreground mr-2 pl-2 select-none">&gt;</span>
+                            <input
+                            value={terminalInput}
+                            onChange={(e) => setTerminalInput(e.target.value)}
+                            onKeyDown={handleCommandRun}
+                            placeholder="Type a JavaScript command and press Enter..."
+                            className="w-full bg-transparent border-0 ring-0 focus:ring-0 focus:outline-none p-1 font-code text-sm placeholder:text-muted-foreground/50"
+                            autoComplete="off"
+                            />
+                        </div>
                       </div>
                     </TabsContent>
                     <TabsContent value="ai" className="flex-1 overflow-auto p-0">
