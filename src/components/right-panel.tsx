@@ -48,7 +48,7 @@ export default function RightPanel({
     }
   };
   
-  const welcomeMessage = `**Copy that prompt** into ChatGPT / Replit / Copilot, or hand it to your dev team, and you’ll get a cloud-hosted VS Code-style environment **with Extension Marketplace + AI Agent that can create, refactor, fix, and reorganize any codebase across all languages and frameworks**—just like Cursor, but fully under your control. 🚀`;
+  const welcomeMessage = `I am your **Agent Builder**. I can help you create, refactor, and improve your code. Ask me to explain or fix code, or give me a prompt to generate something new.`;
 
   return (
     <div className={className}>
@@ -56,7 +56,7 @@ export default function RightPanel({
         <div className="flex items-center justify-between p-2 border-b">
           <h2 className="text-lg font-semibold flex items-center gap-2 pl-2">
             <Bot className="h-5 w-5" />
-            AI Assistant
+            Agent Builder
           </h2>
           <Button variant="ghost" size="icon" onClick={togglePanel}>
             <X className="h-5 w-5" />

@@ -339,7 +339,7 @@ export default function WorkbenchPage() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="AI Agent" onClick={() => setIsRightPanelOpen(v => !v)}>
+                <SidebarMenuButton tooltip="Agent Builder" onClick={() => setIsRightPanelOpen(v => !v)}>
                   <Bot />
                 </SidebarMenuButton>
               </SidebarMenuItem>
