@@ -15,6 +15,7 @@ import {
   Bot,
   Settings,
   PanelBottom,
+  PanelRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,9 +29,11 @@ import { useToast } from '@/hooks/use-toast';
 import { explainCode } from '@/ai/flows/explain-code';
 import { fixErrors } from '@/ai/flows/fix-errors';
 import { autoComplete } from '@/ai/flows/auto-complete';
+import { chat, type ChatMessage } from '@/ai/flows/chat';
 import { defaultJSCode, defaultPythonCode, defaultTSCode, defaultHTMLCode, defaultCSSCode } from '@/lib/default-code';
 import CodeEditor from '@/components/code-editor';
 import RightPanel from '@/components/right-panel';
+import BottomPanel from '@/components/bottom-panel';
 import {
   Sidebar,
   SidebarProvider,
@@ -40,19 +43,17 @@ import {
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
 
-type LoadingState = 'explain' | 'fix' | 'autocomplete' | false;
+type LoadingState = 'explain' | 'fix' | 'autocomplete' | 'chat' | false;
 
 export default function WorkbenchPage() {
   const [code, setCode] = React.useState(defaultJSCode);
   const [language, setLanguage] = React.useState('javascript');
   const [output, setOutput] = React.useState<string[]>([]);
-  const [aiExplanation, setAiExplanation] = React.useState(
-    `**Copy that prompt** into ChatGPT / Replit / Copilot, or hand it to your dev team, and you’ll get a cloud-hosted VS Code-style environment **with Extension Marketplace + AI Agent that can create, refactor, fix, and reorganize any codebase across all languages and frameworks**—just like Cursor, but fully under your control. 🚀`
-  );
+  const [chatMessages, setChatMessages] = React.useState<ChatMessage[]>([]);
   const [loading, setLoading] = React.useState<LoadingState>(false);
-  const [activeTab, setActiveTab] = React.useState('ai');
   const [theme, setTheme] = React.useState('light');
   const [isBottomPanelOpen, setIsBottomPanelOpen] = React.useState(true);
+  const [isRightPanelOpen, setIsRightPanelOpen] = React.useState(true);
   const [terminalInput, setTerminalInput] = React.useState('');
   const editorRef = React.useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
   const { toast } = useToast();
@@ -99,7 +100,7 @@ export default function WorkbenchPage() {
     }
     setCode(newCode);
     setOutput([]);
-    setAiExplanation('');
+    setChatMessages([]);
   };
 
   const handleEditorDidMount = (editor: MonacoEditor.IStandaloneCodeEditor) => {
@@ -149,7 +150,6 @@ export default function WorkbenchPage() {
     } finally {
       console.log = originalConsoleLog;
     }
-    setActiveTab('output');
     if (!isBottomPanelOpen) setIsBottomPanelOpen(true);
   };
   
@@ -197,6 +197,9 @@ export default function WorkbenchPage() {
     setOutput(prev => [...prev, `> ${command}`, ...newEntries].filter(l => l));
   };
 
+  const addMessage = (message: ChatMessage) => {
+    setChatMessages(prev => [...prev, message]);
+  }
 
   const handleExplainCode = async () => {
     const selectedCode = getSelectedText();
@@ -205,15 +208,14 @@ export default function WorkbenchPage() {
       return;
     }
     setLoading('explain');
-    setAiExplanation('');
-    setActiveTab('ai');
-    if (!isBottomPanelOpen) setIsBottomPanelOpen(true);
+    if (!isRightPanelOpen) setIsRightPanelOpen(true);
     try {
+      addMessage({role: 'user', content: `Explain this code:\n\`\`\`${language}\n${selectedCode}\n\`\`\``})
       const result = await explainCode({ code: selectedCode, language });
-      setAiExplanation(result.explanation);
+      addMessage({role: 'model', content: result.explanation});
     } catch (error) {
       toast({ title: 'AI Error', description: 'Failed to get explanation from AI.', variant: 'destructive' });
-      setAiExplanation('An error occurred while fetching the explanation.');
+      addMessage({role: 'model', content: 'An error occurred while fetching the explanation.'});
     } finally {
       setLoading(false);
     }
@@ -226,10 +228,9 @@ export default function WorkbenchPage() {
       return;
     }
     setLoading('fix');
-    setAiExplanation('');
-    setActiveTab('ai');
-    if (!isBottomPanelOpen) setIsBottomPanelOpen(true);
+    if (!isRightPanelOpen) setIsRightPanelOpen(true);
     try {
+      addMessage({role: 'user', content: `Fix this code:\n\`\`\`${language}\n${selectedCode}\n\`\`\``})
       const result = await fixErrors({ code: selectedCode, language });
       const selection = editorRef.current?.getSelection();
       if (selection && !selection.isEmpty()) {
@@ -237,11 +238,11 @@ export default function WorkbenchPage() {
       } else {
         setCode(result.fixedCode);
       }
-      setAiExplanation(result.explanation);
+      addMessage({role: 'model', content: `Here's the fixed code:\n\`\`\`${language}\n${result.fixedCode}\n\`\`\`\n**Explanation:**\n${result.explanation}`});
       toast({ title: 'Success', description: 'Code has been fixed.' });
     } catch (error) {
       toast({ title: 'AI Error', description: 'Failed to get fix from AI.', variant: 'destructive' });
-      setAiExplanation('An error occurred while fetching the fix.');
+      addMessage({role: 'model', content: 'An error occurred while fetching the fix.'});
     } finally {
       setLoading(false);
     }
@@ -279,6 +280,21 @@ export default function WorkbenchPage() {
     }
   };
 
+  const handleSendMessage = async (message: string) => {
+    setLoading('chat');
+    const newHistory: ChatMessage[] = [...chatMessages, {role: 'user', content: message}];
+    setChatMessages(newHistory);
+    try {
+      const response = await chat(newHistory, message);
+      addMessage({role: 'model', content: response});
+    } catch (error) {
+       toast({ title: 'AI Error', description: 'Failed to get response from AI.', variant: 'destructive' });
+       addMessage({role: 'model', content: 'An error occurred while fetching the response.'});
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <SidebarProvider>
       <div className="flex h-screen bg-background font-body">
@@ -296,7 +312,7 @@ export default function WorkbenchPage() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="AI Agent Builder">
+                <SidebarMenuButton tooltip="AI Agent" onClick={() => setIsRightPanelOpen(v => !v)}>
                   <Bot />
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -355,30 +371,41 @@ export default function WorkbenchPage() {
                   <PanelBottom className="h-5 w-5" />
                   <span className="sr-only">Toggle Bottom Panel</span>
               </Button>
+              <Button variant="ghost" size="icon" onClick={() => setIsRightPanelOpen(v => !v)}>
+                  <PanelRight className="h-5 w-5" />
+                  <span className="sr-only">Toggle Right Panel</span>
+              </Button>
             </div>
           </header>
 
-          <main className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 relative">
-              <CodeEditor
-                language={language}
-                value={code}
-                onChange={(value) => setCode(value || '')}
-                onMount={handleEditorDidMount}
-                theme={theme === 'dark' ? 'vs-dark' : 'light'}
-              />
+          <main className="flex-1 flex overflow-hidden">
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 relative">
+                <CodeEditor
+                  language={language}
+                  value={code}
+                  onChange={(value) => setCode(value || '')}
+                  onMount={handleEditorDidMount}
+                  theme={theme === 'dark' ? 'vs-dark' : 'light'}
+                />
+              </div>
+              {isBottomPanelOpen && (
+                <BottomPanel
+                  togglePanel={() => setIsBottomPanelOpen(false)}
+                  output={output}
+                  terminalInput={terminalInput}
+                  setTerminalInput={setTerminalInput}
+                  handleCommandRun={handleCommandRun}
+                />
+              )}
             </div>
-            {isBottomPanelOpen && (
+            {isRightPanelOpen && (
               <RightPanel
-                togglePanel={() => setIsBottomPanelOpen(false)}
-                output={output}
-                aiExplanation={aiExplanation}
-                loading={loading}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                terminalInput={terminalInput}
-                setTerminalInput={setTerminalInput}
-                handleCommandRun={handleCommandRun}
+                messages={chatMessages}
+                loading={loading === 'chat' || loading === 'explain' || loading === 'fix'}
+                onSendMessage={handleSendMessage}
+                togglePanel={() => setIsRightPanelOpen(false)}
+                className="w-[400px] shrink-0"
               />
             )}
           </main>
