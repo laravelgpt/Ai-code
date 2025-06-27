@@ -22,7 +22,7 @@ export default function BottomPanel({
   togglePanel,
 }: BottomPanelProps) {
   return (
-    <div className="h-[300px] w-full border-t bg-background shrink-0">
+    <div className="h-full w-full border-t bg-background shrink-0">
       <Card className="h-full flex flex-col rounded-none border-0">
         <div className="flex items-center justify-between p-2 border-b bg-muted/50">
           <p className="px-2 text-sm font-medium">Terminal</p>

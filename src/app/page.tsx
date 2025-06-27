@@ -51,6 +51,8 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 type LoadingState = 'explain' | 'fix' | 'autocomplete' | 'chat' | 'workflow' | false;
 
@@ -66,6 +68,7 @@ export default function WorkbenchPage() {
   const [terminalInput, setTerminalInput] = React.useState('');
   const editorRef = React.useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   React.useEffect(() => {
     const storedTheme = localStorage.getItem('theme') || 'light';
@@ -376,20 +379,23 @@ export default function WorkbenchPage() {
                   <SelectItem value="css">CSS</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="sm" onClick={handleRunCode}><Play className="mr-2 h-4 w-4" />Run</Button>
+              <Button variant="outline" size="sm" onClick={handleRunCode}>
+                <Play className="h-4 w-4" />
+                <span className="hidden md:inline">Run</span>
+              </Button>
               <Button variant="outline" size="sm" onClick={handleExplainCode} disabled={!!loading}>
-                {loading === 'explain' ? <LoaderCircle className="animate-spin mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                Explain
+                {loading === 'explain' ? <LoaderCircle className="animate-spin h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+                <span className="hidden md:inline">Explain</span>
               </Button>
               <Button variant="outline" size="sm" onClick={handleFixCode} disabled={!!loading}>
-                {loading === 'fix' ? <LoaderCircle className="animate-spin mr-2 h-4 w-4" /> : <Wand className="mr-2 h-4 w-4" />}
-                Fix
+                {loading === 'fix' ? <LoaderCircle className="animate-spin h-4 w-4" /> : <Wand className="h-4 w-4" />}
+                <span className="hidden md:inline">Fix</span>
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" disabled={!!loading}>
-                    {loading === 'workflow' ? <LoaderCircle className="animate-spin mr-2 h-4 w-4" /> : <Workflow className="mr-2 h-4 w-4" />}
-                    Workflow
+                    {loading === 'workflow' ? <LoaderCircle className="animate-spin h-4 w-4" /> : <Workflow className="h-4 w-4" />}
+                    <span className="hidden md:inline">Workflow</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -400,8 +406,8 @@ export default function WorkbenchPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button variant="outline" size="sm" onClick={handleAutoComplete} disabled={!!loading}>
-                {loading === 'autocomplete' ? <LoaderCircle className="animate-spin mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                Complete
+                {loading === 'autocomplete' ? <LoaderCircle className="animate-spin h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+                <span className="hidden md:inline">Complete</span>
               </Button>
               <Button variant="ghost" size="icon" onClick={toggleTheme}>
                 <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
@@ -430,17 +436,20 @@ export default function WorkbenchPage() {
                   theme={theme === 'dark' ? 'vs-dark' : 'light'}
                 />
               </div>
-              {isBottomPanelOpen && (
-                <BottomPanel
-                  togglePanel={() => setIsBottomPanelOpen(false)}
-                  output={output}
-                  terminalInput={terminalInput}
-                  setTerminalInput={setTerminalInput}
-                  handleCommandRun={handleCommandRun}
-                />
+              {!isMobile && isBottomPanelOpen && (
+                <div className="h-[300px] shrink-0">
+                  <BottomPanel
+                    togglePanel={() => setIsBottomPanelOpen(false)}
+                    output={output}
+                    terminalInput={terminalInput}
+                    setTerminalInput={setTerminalInput}
+                    handleCommandRun={handleCommandRun}
+                  />
+                </div>
               )}
             </div>
-            {isRightPanelOpen && (
+            
+            {!isMobile && isRightPanelOpen && (
               <RightPanel
                 messages={chatMessages}
                 loading={loading === 'chat' || loading === 'explain' || loading === 'fix'}
@@ -452,6 +461,32 @@ export default function WorkbenchPage() {
           </main>
         </div>
       </div>
+       {isMobile && (
+        <>
+          <Sheet open={isBottomPanelOpen} onOpenChange={setIsBottomPanelOpen}>
+            <SheetContent side="bottom" className="h-[70vh] p-0">
+              <BottomPanel
+                togglePanel={() => setIsBottomPanelOpen(false)}
+                output={output}
+                terminalInput={terminalInput}
+                setTerminalInput={setTerminalInput}
+                handleCommandRun={handleCommandRun}
+              />
+            </SheetContent>
+          </Sheet>
+          <Sheet open={isRightPanelOpen} onOpenChange={setIsRightPanelOpen}>
+            <SheetContent side="right" className="w-[85vw] p-0">
+              <RightPanel
+                messages={chatMessages}
+                loading={loading === 'chat' || loading === 'explain' || loading === 'fix'}
+                onSendMessage={handleSendMessage}
+                togglePanel={() => setIsRightPanelOpen(false)}
+                className="h-full"
+              />
+            </SheetContent>
+          </Sheet>
+        </>
+      )}
     </SidebarProvider>
   );
 }
