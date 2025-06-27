@@ -1,125 +1,129 @@
 'use client';
 
 import * as React from 'react';
-import {
-  LoaderCircle,
-  PanelBottomClose,
-} from 'lucide-react';
+import { Bot, LoaderCircle, Send, User, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Textarea } from '@/components/ui/textarea';
+import type { ChatMessage } from '@/ai/flows/chat';
 
 interface RightPanelProps {
-  output: string[];
-  aiExplanation: string;
-  loading: 'explain' | 'fix' | 'autocomplete' | false;
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-  terminalInput: string;
-  setTerminalInput: (input: string) => void;
-  handleCommandRun: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  messages: ChatMessage[];
+  loading: boolean;
+  onSendMessage: (message: string) => void;
   togglePanel: () => void;
+  className?: string;
 }
 
 export default function RightPanel({
-  output,
-  aiExplanation,
+  messages,
   loading,
-  activeTab,
-  setActiveTab,
-  terminalInput,
-  setTerminalInput,
-  handleCommandRun,
+  onSendMessage,
   togglePanel,
+  className
 }: RightPanelProps) {
-  return (
-    <div className="h-[300px] w-full border-t bg-background">
-      <Card className="h-full flex flex-col rounded-none border-0">
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="flex flex-col h-full"
-        >
-          <div className="flex items-center justify-between p-2 border-b bg-muted/50">
-            <TabsList className="bg-transparent p-0">
-              <TabsTrigger value="ai">AI Assistant</TabsTrigger>
-              <TabsTrigger value="output">Terminal</TabsTrigger>
-            </TabsList>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={togglePanel}
-            >
-              <PanelBottomClose className="h-5 w-5" />
-              <span className="sr-only">Close Panel</span>
-            </Button>
-          </div>
+  const [input, setInput] = React.useState('');
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
-          <div className="flex-1 overflow-auto">
-            <TabsContent value="output" className="p-2 pt-0 h-full mt-0">
-              <div className="h-full bg-terminal text-terminal-foreground rounded-md flex flex-col">
-                <ScrollArea className="flex-1">
-                  <div className="text-sm p-4 font-code">
-                    {output.length === 0 && (
-                      <div className="flex items-center">
-                        <span className="text-muted-foreground mr-2">&gt;</span>
-                        <span>Terminal ready. Click "Run" to execute code.</span>
-                      </div>
-                    )}
-                    {output.map((line, index) => {
-                      const isCommand = line.startsWith('> ');
-                      const content = isCommand ? line.substring(2) : line;
-                      return (
-                        <div key={index} className="flex items-start">
-                          <span className="text-muted-foreground mr-2 shrink-0 select-none">
-                            {isCommand ? '>' : ' '}
-                          </span>
-                          <span className="whitespace-pre-wrap break-all">
-                            {content}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </ScrollArea>
-                <div className="flex items-center p-1 border-t border-t-slate-700">
-                  <span className="text-muted-foreground mr-2 pl-2 select-none">
-                    &gt;
-                  </span>
-                  <input
-                    value={terminalInput}
-                    onChange={(e) => setTerminalInput(e.target.value)}
-                    onKeyDown={handleCommandRun}
-                    placeholder="Type a JavaScript command..."
-                    className="w-full bg-transparent border-0 ring-0 focus:ring-0 focus:outline-none p-1 font-code text-sm placeholder:text-muted-foreground/50"
-                    autoComplete="off"
-                  />
-                </div>
-              </div>
-            </TabsContent>
-            <TabsContent value="ai" className="h-full mt-0">
-              <ScrollArea className="h-full">
-                <div className="p-4 text-sm prose dark:prose-invert max-w-none">
-                  {loading && loading !== 'autocomplete' ? (
-                    <div className="flex items-center gap-2">
-                      <LoaderCircle className="animate-spin h-4 w-4" />
-                      <span>Thinking...</span>
-                    </div>
-                  ) : (
-                    <div
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  React.useEffect(() => {
+    scrollToBottom();
+  }, [messages, loading]);
+
+  const handleSend = () => {
+    if (input.trim()) {
+      onSendMessage(input.trim());
+      setInput('');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+  
+  const welcomeMessage = `**Copy that prompt** into ChatGPT / Replit / Copilot, or hand it to your dev team, and you’ll get a cloud-hosted VS Code-style environment **with Extension Marketplace + AI Agent that can create, refactor, fix, and reorganize any codebase across all languages and frameworks**—just like Cursor, but fully under your control. 🚀`;
+
+  return (
+    <div className={className}>
+      <Card className="h-full flex flex-col rounded-none border-0 border-l">
+        <div className="flex items-center justify-between p-2 border-b">
+          <h2 className="text-lg font-semibold flex items-center gap-2 pl-2">
+            <Bot className="h-5 w-5" />
+            AI Assistant
+          </h2>
+          <Button variant="ghost" size="icon" onClick={togglePanel}>
+            <X className="h-5 w-5" />
+            <span className="sr-only">Close Panel</span>
+          </Button>
+        </div>
+        <ScrollArea className="flex-1">
+          <div className="p-4 space-y-4 text-sm">
+            {messages.length === 0 && !loading ? (
+              <div className="prose dark:prose-invert max-w-none"
+                dangerouslySetInnerHTML={{
+                  __html: welcomeMessage
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\n/g, '<br />'),
+                }}
+              />
+            ) : (
+              messages.map((message, index) => (
+                <div key={index} className={`flex items-start gap-3 ${message.role === 'user' ? 'justify-end' : ''}`}>
+                  {message.role === 'model' && <Bot className="h-5 w-5 text-primary flex-shrink-0" />}
+                  <div className={`rounded-lg px-3 py-2 ${message.role === 'model' ? 'bg-muted' : 'bg-primary text-primary-foreground'}`}>
+                    <div className="prose dark:prose-invert max-w-none"
                       dangerouslySetInnerHTML={{
-                        __html: aiExplanation
+                        __html: message.content
+                          .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>')
                           .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                           .replace(/\n/g, '<br />'),
                       }}
                     />
-                  )}
+                  </div>
+                  {message.role === 'user' && <User className="h-5 w-5 text-muted-foreground flex-shrink-0" />}
                 </div>
-              </ScrollArea>
-            </TabsContent>
+              ))
+            )}
+            {loading && (
+              <div className="flex items-start gap-3">
+                <Bot className="h-5 w-5 text-primary flex-shrink-0" />
+                <div className="rounded-lg px-3 py-2 bg-muted flex items-center gap-2">
+                  <LoaderCircle className="animate-spin h-4 w-4" />
+                  <span>Thinking...</span>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
-        </Tabs>
+        </ScrollArea>
+        <div className="p-4 border-t">
+          <div className="relative">
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask the AI anything..."
+              className="pr-16"
+              rows={1}
+            />
+            <Button
+              type="submit"
+              size="icon"
+              className="absolute right-2 bottom-2 h-8 w-8"
+              onClick={handleSend}
+              disabled={loading || !input.trim()}
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </Card>
     </div>
   );
