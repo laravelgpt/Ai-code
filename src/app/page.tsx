@@ -28,7 +28,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { explainCode } from '@/ai/flows/explain-code';
 import { fixErrors } from '@/ai/flows/fix-errors';
 import { autoComplete } from '@/ai/flows/auto-complete';
-import { defaultJSCode, defaultPythonCode } from '@/lib/default-code';
+import { defaultJSCode, defaultPythonCode, defaultTSCode, defaultHTMLCode, defaultCSSCode } from '@/lib/default-code';
 import CodeEditor from '@/components/code-editor';
 
 type LoadingState = 'explain' | 'fix' | 'autocomplete' | false;
@@ -65,7 +65,27 @@ export default function WorkbenchPage() {
   
   const handleLanguageChange = (value: string) => {
     setLanguage(value);
-    setCode(value === 'javascript' ? defaultJSCode : defaultPythonCode);
+    let newCode;
+    switch (value) {
+      case 'javascript':
+        newCode = defaultJSCode;
+        break;
+      case 'typescript':
+        newCode = defaultTSCode;
+        break;
+      case 'python':
+        newCode = defaultPythonCode;
+        break;
+      case 'html':
+        newCode = defaultHTMLCode;
+        break;
+      case 'css':
+        newCode = defaultCSSCode;
+        break;
+      default:
+        newCode = defaultJSCode;
+    }
+    setCode(newCode);
     setOutput([]);
     setAiExplanation('');
   };
@@ -84,10 +104,11 @@ export default function WorkbenchPage() {
   };
 
   const handleRunCode = () => {
-    if (language === 'python') {
+    const nonExecutableLanguages = ['python', 'typescript', 'html', 'css'];
+    if (nonExecutableLanguages.includes(language)) {
       toast({
         title: 'Info',
-        description: 'Python execution is not supported in this environment.',
+        description: `${language.charAt(0).toUpperCase() + language.slice(1)} execution is not supported in this environment.`,
         variant: 'default',
       });
       return;
@@ -215,7 +236,10 @@ export default function WorkbenchPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="javascript">JavaScript</SelectItem>
+              <SelectItem value="typescript">TypeScript</SelectItem>
               <SelectItem value="python">Python</SelectItem>
+              <SelectItem value="html">HTML</SelectItem>
+              <SelectItem value="css">CSS</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline" size="sm" onClick={handleRunCode}><Play className="mr-2 h-4 w-4" />Run</Button>

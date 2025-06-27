@@ -25,3 +25,45 @@ def greet(name):
 message = greet('Developer')
 print(message)
 `;
+
+export const defaultTSCode = `// You can write TypeScript and React code here!
+import React from 'react';
+
+type GreetingProps = {
+  name: string;
+};
+
+const Greeting: React.FC<GreetingProps> = ({ name }) => {
+  return <h1>Hello, {name}!</h1>;
+};
+
+// TS/React execution is not supported, but you can use AI tools.
+console.log(<Greeting name="TypeScript Developer" />);
+`;
+
+export const defaultHTMLCode = `<!-- Write your HTML code here -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Page</title>
+</head>
+<body>
+
+  <h1>Welcome to my website</h1>
+  <p>This is a paragraph.</p>
+
+</body>
+</html>
+`;
+
+export const defaultCSSCode = `/* Write your CSS code here */
+
+body {
+  font-family: sans-serif;
+  background-color: #f0f0f0;
+}
+
+h1 {
+  color: #333;
+}
+`;
