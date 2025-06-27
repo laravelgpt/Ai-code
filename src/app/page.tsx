@@ -279,7 +279,7 @@ export default function WorkbenchPage() {
         >
           <Card className="h-full flex flex-col rounded-t-lg border-t">
             <div className="flex items-center justify-between p-2 border-b bg-muted/50 rounded-t-lg">
-                <h3 className="font-semibold text-sm pl-2">Console</h3>
+                <h3 className="font-semibold text-sm pl-2">Panel</h3>
                 <Button variant="ghost" size="icon" onClick={() => setIsPanelOpen(!isPanelOpen)}>
                     {isPanelOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
                     <span className="sr-only">Toggle Panel</span>
@@ -288,16 +288,29 @@ export default function WorkbenchPage() {
             {isPanelOpen && (
               <CardContent className="flex-1 p-0">
                   <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
-                    <TabsList className="mx-2 mt-2">
-                      <TabsTrigger value="output">Output</TabsTrigger>
+                    <TabsList className="mx-2 mt-2 shrink-0">
+                      <TabsTrigger value="output">Terminal</TabsTrigger>
                       <TabsTrigger value="ai">AI Assistant</TabsTrigger>
                     </TabsList>
-                    <TabsContent value="output" className="flex-1 overflow-auto p-0">
+                    <TabsContent value="output" className="flex-1 overflow-auto p-2 pt-0">
+                      <div className="h-full bg-terminal text-terminal-foreground rounded-md">
                         <ScrollArea className="h-full">
-                        <pre className="text-sm p-4 font-code whitespace-pre-wrap">
-                            {output.join('\n')}
-                        </pre>
+                          <pre className="text-sm p-4 font-code whitespace-pre-wrap">
+                            {output.length === 0 && (
+                              <div className="flex items-center">
+                                <span className="text-muted-foreground mr-2">&gt;</span>
+                                <span>Terminal ready. Click "Run" to execute code.</span>
+                              </div>
+                            )}
+                            {output.map((line, index) => (
+                              <div key={index} className="flex items-start">
+                                <span className="text-muted-foreground mr-2 shrink-0">&gt;</span>
+                                <span className="break-all">{line}</span>
+                              </div>
+                            ))}
+                          </pre>
                         </ScrollArea>
+                      </div>
                     </TabsContent>
                     <TabsContent value="ai" className="flex-1 overflow-auto p-0">
                         <ScrollArea className="h-full">
