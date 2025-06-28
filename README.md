@@ -23,3 +23,60 @@ Write, chat about, refactor, and run code snippets from one ergonomic interface 
 
 ## 📂 Project Structure
 
+├── src/
+│ ├── ai/ # Genkit flows (explain-code, fix-errors, chat …)
+│ ├── app/ # Next (RSC) routes & pages
+│ ├── components/ # ShadCN/Radix UI primitives
+│ └── lib/ # Default snippets & helpers
+├── public/
+├── tailwind.config.ts
+├── apphosting.yaml # Firebase Hosting config
+└── package.json
+
+
+---
+
+## 🛠️ Tech Stack
+
+* **Next.js 15** (App Router, React 18, Turbopack dev-server)
+* **TypeScript 5** + **ESLint** + **Prettier**
+* **Tailwind CSS 3.4** + `tailwindcss-animate`
+* **Radix UI / Shadcn** components
+* **Monaco-Editor** (via `@monaco-editor/react`)
+* **Genkit 1.13** with the `@genkit-ai/googleai` plugin → **Gemini 2.0 Flash** model :contentReference[oaicite:0]{index=0}
+* **Zod** for IO validation
+* **Firebase App Hosting** (optional) :contentReference[oaicite:1]{index=1}
+
+---
+
+## ⚙️ Prerequisites
+
+| Tool | Version |
+|------|---------|
+| **Node** | ≥ 20.11 |
+| **pnpm** (or npm ≥ 10) | recommended |
+| **Google AI Studio key** | `GEMINI_API_KEY` or `GOOGLE_API_KEY` |
+
+---
+
+## 🚀 Local Development
+
+```bash
+# 1 Clone
+git clone https://github.com/laravelgpt/Ai-code.git
+cd Ai-code
+
+# 2 Install deps
+pnpm install      # or npm install
+
+# 3 Environment
+cp .env.example .env.local   # file provided; create if absent
+# └─ Add GEMINI_API_KEY=your-studio-key
+
+# 4 Run both dev servers in parallel
+pnpm genkit:dev   # starts Genkit flows (http://localhost:3333 by default)
+pnpm dev          # starts Next.js on http://localhost:9002
+
+# 5 Open http://localhost:9002  🎉
+
+
